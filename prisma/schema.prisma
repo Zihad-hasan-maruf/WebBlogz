@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                 String  @id @default(cuid()) @map("_id")
+  userId             String  @map("user_id")
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String? 
+  access_token       String? 
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? 
+  session_state      String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+ 
+model Session {
+  id           String   @id @default(cuid())  @map("_id")
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@map("sessions")
+}
+ 
+model User {
+  id            String    @id @default(cuid())  @map("_id")
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? 
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  Post          Post[]
+  Comment       Comment[]
+ 
+  @@map("users")
+}
+ 
+model VerificationToken {
+  identifier String @id  @map("_id")
+  token      String
+  expires    DateTime
+ 
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Category{
+  id String @id @default(cuid()) @map("_id")
+  slug String @unique
+  title String
+  img String?
+  Posts Post[]
+}
+
+model Post {
+  id        String @id @default(cuid()) @map("_id")
+  createdAt DateTime @default(now())
+  slug      String @unique
+  title     String
+  desc      String
+  img       String?
+  views     Int @default(0)
+  catSlug   String
+  cat       Category @relation(fields: [catSlug], references: [slug])
+  userEmail String
+  user      User   @relation(fields: [userEmail], references: [email])
+  comments  Comment[]
+}
+
+model Comment {
+  id        String @id @default(cuid()) @map("_id")
+  createdAt DateTime @default(now())
+  desc      String
+  userEmail String
+  user      User   @relation(fields: [userEmail], references: [email])
+  postSlug  String
+  post      Post   @relation(fields: [postSlug], references: [slug])
+}
